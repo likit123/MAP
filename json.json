@@ -1,0 +1,38 @@
+[
+  {
+    "id": "173",
+    "kind": "1",
+    "latitude": "18.896616",
+    "longitude": "100.135851",
+    "address": "ทางหลวงแผ่นดินหมายเลข 1251 ต.หนองหล่ม อ.ดอกคำใต้ จ.พะเยา 56120"
+  },
+  {
+    "id": "1",
+    "kind": "3",
+    "latitude": "19.75223639",
+    "longitude": "100.2286001",
+    "address": "27 หมู่ 25 Tambon Wiang, Amphoe Thoeng, Chang Wat Chiang Rai 57160, Thailand"
+  },
+
+  {
+    "id": "7",
+    "kind": "2",
+    "latitude": "19.3927797",
+    "longitude": "99.7795178",
+    "address": "9QVH+5QM, Charoen Rat, Mae Chai District, Phayao 56130, Thailand"
+  },
+  {
+    "id": "8",
+    "kind": "2",
+    "latitude": "20.1705905",
+    "longitude": "99.7391189",
+    "address": "5PCQ+6J Mae Salong Nai, Mae Fa Luang District, Chiang Rai, Thailand"
+  },
+  {
+    "id": "9",
+    "kind": "2",
+    "latitude": "20.17471888",
+    "longitude": "99.73146528",
+    "address": "5PFJ+VH Mae Salong Nai, Mae Fa Luang District, Chiang Rai, Thailand"
+  }
+]

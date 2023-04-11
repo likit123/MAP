@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#D9D9D9">
+  <title>map</title>
+  <link href="https://fonts.googleapis.com/css?family=Prompt" rel="stylesheet" />
+  <link href="lib/leaflet/leaflet.css" rel="stylesheet" />
+  <link href="lib/alert_sweet/sweetalert.min.css" rel="stylesheet">
+  <link href="css.css" rel="stylesheet">
+</head>
+
+<body>
+
+  <div class="box"><span style="margin-left:30px;color:blue;font-size:1.3rem;">MAP</span>
+    <span id="flag_text_click1_area" class="hidden float-right" style="cursor:pointer;margin-left:70px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-chevron-up"
+        viewBox="0 0 16 16">
+        <path fill-rule="evenodd"
+          d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z" />
+      </svg>
+    </span>
+    <span id="flag_text_click2_area" class=" float-right" style="cursor:pointer;margin-left:70px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-chevron-down"
+        viewBox="0 0 16 16">
+        <path fill-rule="evenodd"
+          d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+      </svg>
+    </span>
+    <div id="flag_text" class="hidden" style="font-size:.95rem;">
+
+      <div>
+        <img src="icons_map/p1.png" style="width:30px"> = A <input id="id_layer1" type="checkbox" class="is_pointer">
+      </div>
+      <div>
+        <img src="icons_map/p2.png" style="width:30px"> = B <input id="id_layer2" type="checkbox" class="is_pointer">
+      </div>
+      <div>
+        <img src="icons_map/p3.png" style="width:30px"> = C <input id="id_layer3" type="checkbox" class="is_pointer">
+      </div>
+      <div>
+        <label for="select_layer1" class="is_pointer">
+          <input checked type="radio" id="select_layer1" onchange="getValue(this)" name="select_layer" value="1">Streets
+        </label>
+        <label for="select_layer2" class="is_pointer" style="margin-left:30px">
+          <input type="radio" id="select_layer2" onchange="getValue(this)" name="select_layer" value="2">Satellite
+        </label>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div id="mapid"></div>
+</body>
+
+</html>
+
+<script src="lib/jquery/jquery-3.4.1.min.js"></script>
+<script src="lib/axios/axios.min.js"></script>
+<script src="lib/leaflet/leaflet.js"></script>
+<script src="lib/alert_sweet/sweetalert.min.js"></script>
+<script src="lib/loadingoverlay/loadingoverlay.min.js"></script>
+
+<script>
+  const flag_text = document.getElementById('flag_text')
+  const flag_text_click1_area = document.getElementById('flag_text_click1_area')
+  const flag_text_click2_area = document.getElementById('flag_text_click2_area')
+
+  const id_layer1 = document.getElementById('id_layer1')
+  const id_layer2 = document.getElementById('id_layer2')
+  const id_layer3 = document.getElementById('id_layer3')
+
+  const select_layer = document.querySelector('.select_layer')
+
+  flag_text_click1_area.addEventListener('click', () => {
+    flag_text.classList.add('hidden')
+    flag_text_click2_area.classList.remove('hidden')
+    flag_text_click1_area.classList.add('hidden')
+  })
+  flag_text_click2_area.addEventListener('click', () => {
+    flag_text.classList.remove('hidden')
+    flag_text_click2_area.classList.add('hidden')
+    flag_text_click1_area.classList.remove('hidden')
+  })
+
+  function getValue(radio) {
+    const a = radio.value
+    if (a == '2') {
+      mapid.removeLayer(tiles)
+      tiles2.addTo(mapid)
+    } else {
+      mapid.removeLayer(tiles2)
+      tiles.addTo(mapid)
+    }
+  }
+
+  var mapIdObj = {};
+  var layer1
+  var layer2
+  var layer3
+  var latit
+  var longit
+  var longdomapserver
+  var longdomapserver2
+  var k_ran = ''
+  var dd = new Date().getTime() / 1000;
+  dd = dd.toString();
+  $k_ran = dd.slice(dd.length - 1)
+  longdomapserver =
+    'https://ms.longdo.com/mmmap/tile.php?zoom={z}&x={x}&y={y}&key=48765fee5e6fd555ab46f9d485ea0dcf&proj=epsg3857&HD=1';
+
+  longdomapserver2 = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+
+  function here_move() {
+    mapid.removeLayer(abc);
+    var latlng
+    map_zoom = mapid.getZoom()
+    if (map_zoom == undefined) {
+      map_zoom = 14
+    }
+    word_here = 'คุณอยู่ที่นี่!!'
+    navigator.geolocation.getCurrentPosition(function (position) {
+      latlng = new L.LatLng(position.coords.latitude, position.coords.longitude);
+      latit = latlng.lat;
+      longit = latlng.lng;
+      abc = L.marker([latlng.lat, latlng.lng], {
+        icon: icon_here,
+      })
+        .bindPopup(template_here)
+        .bindTooltip(word_here, {
+          permanent: true,
+          direction: 'right',
+          opacity: 0.9,
+          offset: L.point({
+            x: 10,
+            y: 0
+          })
+        })
+        .addTo(mapid);
+      mapid.setView(latlng, map_zoom, {
+        animation: true
+      });
+      mapid.panTo(new L.LatLng(latit, longit));
+      mapid.addLayer(abc);
+    },
+
+      function errorCallback(error) {
+        //do error handling
+      }, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: Infinity,
+    }
+    )
+  }
+
+  function click_google(feature_lat, feature_lng) {
+    let a = document.createElement('a');
+    a.href = "https://www.google.co.th/maps/dir/" + latit + "," + longit + "/" + feature_lat + "," + feature_lng
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a)
+  }
+
+  function onFeatureOptions(feature, latlng) {
+    let myicon
+    var iconPoint
+    let icon1 = 'icons_map/p1.png'
+    let icon2 = 'icons_map/p2.png'
+    let icon3 = 'icons_map/p3.png'
+    if (feature.kind == '1') {
+      myicon = icon1
+    } else if (feature.kind == '2') {
+      myicon = icon2
+    } else if (feature.kind == '3') {
+      myicon = icon3
+    }
+    iconPoint = new L.icon({
+      iconUrl: myicon,
+      iconSize: [40, 40],
+    });
+    return L.marker(latlng, {
+      icon: iconPoint
+    })
+  }
+
+  function onEachFeature(feature, layer) {
+    mapIdObj[feature.id] = L.stamp(layer);
+    let ii = layer.options.icon
+    let ss = ''
+    ss =
+      `
+    <div style="font-size:15px;"> <span style="color:blue;">พิกัด</span> : ${feature.latitude},${feature.longitude}  </div>
+    <div style="font-size:15px;"> <span style="color:blue;">สถานที่</span> : ${feature.address} </div>
+    <div style="padding-top:10px"> <button onclick="click_google(${feature.latitude},${feature.longitude})"
+    style="font-family:Prompt;border-radius:30px;padding: .375rem .75rem;font-size: 1rem;color: #fff;background-color: rgb(233, 30, 99);border-color: rgb(233, 30, 99);">แสดงเส้นทาง</button> </div>
+    `
+    setTimeout(() => {
+      layer.bindPopup(ss);
+    }, 3000);
+
+  }
+
+
+  var popup = L.popup({
+    offset: [0, -30]
+  })
+  var abc = ""
+  var icon_here = L.icon({
+    iconUrl: 'icons_map/here.png',
+    iconSize: [20, 35],
+  })
+  const attribution = {
+    attribution: '',
+    maxZoom: 18,
+    id: 'mapbox.streets',
+    accessToken: 'pk.eyJ1IjoibGlraXR5IiwiYSI6ImNrMmpxM2wyaDFqdnYzY28xcmJrdmNhb2oifQ.96fS5ml78UG59jauLl4DrA'
+  }
+
+  var template;
+  let zz = []
+  let datas_for_layer1 = []
+  let datas_for_layer2 = []
+  let datas_for_layer3 = []
+
+  var template_here =
+    `<br><div>
+<button style="font-family:Prompt;border-radius:30px;padding: .375rem .75rem;font-size: 1rem;color: #fff;background-color: #e17100;border-color: #e17100;" onclick="here_move()">เคลื่อนที่ไปยังพิกัดปัจจุบัน</button>`;
+
+  let lat_me = ""
+  let lng_me = ""
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(onShowPosition);
+  } else {
+    x.innerHTML = "Geolocation is not supported by this browser.";
+  }
+
+  function onShowPosition(position) {
+    lat_me = position.coords.latitude
+    lng_me = position.coords.longitude
+  }
+
+  var mapid = ''
+  mapid = L.map('mapid', {
+    zoomControl: false,
+  })
+    .setView([lat_me, lng_me], 15)
+
+  mapid.attributionControl.setPrefix('')
+  mapid.setZoom(15)
+  const tiles = L.tileLayer(longdomapserver, attribution);
+  const tiles2 = L.tileLayer(longdomapserver2, attribution);
+  tiles.addTo(mapid)
+
+  id_layer1.checked = true
+  id_layer2.checked = true
+  id_layer3.checked = true
+
+  id_layer1.addEventListener('change', () => {
+    if (id_layer1.checked) {
+      layer1.addTo(mapid)
+    } else {
+      mapid.removeLayer(layer1);
+    }
+  })
+
+  id_layer2.addEventListener('change', () => {
+    if (id_layer2.checked) {
+      layer2.addTo(mapid)
+    } else {
+      mapid.removeLayer(layer2);
+    }
+  })
+
+  id_layer3.addEventListener('change', () => {
+    if (id_layer3.checked) {
+      layer3.addTo(mapid)
+    } else {
+      mapid.removeLayer(layer3);
+    }
+  })
+
+  $(function () {
+    $.LoadingOverlay("show");
+
+    axios.get(
+      "json.json"
+    )
+      .then((response) => {
+        if (response.data == null) {
+          $.LoadingOverlay("show");
+        } else {
+          $.LoadingOverlay("show");
+          zz = response.data
+          $.LoadingOverlay("hide");
+          zz.forEach((bb) => {
+            c = {
+              id: bb.id,
+              kind: bb.kind,
+              address: bb.address,
+              latitude: bb.latitude,
+              longitude: bb.longitude,
+              type: 'Feature',
+              geometry: {
+                "type": "Point",
+                "coordinates": [bb.longitude, bb.latitude]
+              }
+            }
+            if (bb.kind == '1') {
+              datas_for_layer1.push(c)
+            } else if (bb.kind == '2') {
+              datas_for_layer2.push(c)
+            } else if (bb.kind == '3') {
+              datas_for_layer3.push(c)
+            }
+          })
+        }
+      })
+      .then(() => {
+        $.LoadingOverlay("show");
+        map_zoom = mapid.getZoom()
+        if (map_zoom == undefined) {
+          map_zoom = 14
+        }
+        word_here = 'คุณอยู่ที่นี่!'
+        navigator.geolocation.getCurrentPosition(function (position) {
+          var latlng = new L.LatLng(position.coords.latitude, position.coords.longitude);
+          latit = position.coords.latitude;
+          longit = position.coords.longitude;
+          abc = L.marker([position.coords.latitude, position.coords.longitude], {
+            icon: icon_here,
+          })
+            .bindPopup(template_here)
+            .bindTooltip(word_here, {
+              permanent: true,
+              direction: 'right',
+              opacity: 0.9,
+              offset: L.point({
+                x: 10,
+                y: 0
+              })
+            })
+            .addTo(mapid);
+          $.LoadingOverlay("hide");
+          mapid.setView(latlng, map_zoom, {
+            animation: true
+          });
+          $.LoadingOverlay("hide");
+        })
+      })
+      .then(() => {
+        layer1 = L.geoJSON(datas_for_layer1, {
+          pointToLayer: onFeatureOptions,
+          onEachFeature: onEachFeature
+        }).addTo(mapid);
+
+        layer2 = L.geoJSON(datas_for_layer2, {
+          pointToLayer: onFeatureOptions,
+          onEachFeature: onEachFeature
+        }).addTo(mapid);
+
+        layer3 = L.geoJSON(datas_for_layer3, {
+          pointToLayer: onFeatureOptions,
+          onEachFeature: onEachFeature
+        }).addTo(mapid);
+      })
+      .then(() => {
+        $.LoadingOverlay("hide");
+      })
+  });
+</script>
